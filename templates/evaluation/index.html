@@ -17,13 +17,13 @@
 
 <div class="card text-center">
     <div class="card-header">
-        Evaluator
+        Biofuel Producer
     </div>
     <div class="card-body">
         <h4 class="card-title">Name: {{evaluator_data.name}}</h4>
         <h5 class="card-title">Email: {{evaluator_data.email}}</h5>
         <h6 class="card-title">Phone: {{evaluator_data.phone}}</h6>
-        <p class="card-text">Orgonization: {{evaluator_data.orgonization}}</p>
+        <p class="card-text">Organization: {{evaluator_data.orgonization}}</p>
     </div>
     <div class="card-footer">
         <h3>Question-({{question.sort_order}}): {{question.name}}</h3>
@@ -77,7 +77,7 @@
         <div class="card-body">
             {% for eva_lebel in eva_lebels %}
             {{eva_lebel.label.name}}   
-            <textarea class="form-control" placeholder="Leave a comment here" rows="6" id="floatingTextarea">
+            <textarea class="form-control" rows="6" id="floatingTextarea" disabled>
             {% for el in eva_lebel.evalebelstatement_set.all %}
             {{el.statement.strip}}
             {{el.next_step.strip}}

@@ -10,7 +10,7 @@ class EvaluatorForm(forms.ModelForm):
                       
             'name': forms.TextInput(attrs={'placeholder': 'your name', 'class':'form-control', 'aria-label':'name' }),
             'email': forms.EmailInput(attrs={'placeholder': 'your email', 'class':'form-control', 'aria-label':'email' }),
-            'orgonization': forms.TextInput(attrs={'class':'form-control', 'aria-label':'orgonization', }), 
+            'orgonization': forms.TextInput(attrs={'placeholder': 'Organization', 'class':'form-control', 'aria-label':'orgonization', }), 
             'phone': forms.TextInput(attrs={'placeholder': 'your phone', 'class':'form-control', 'aria-label':'phone'}),
             'biofuel': forms.Select(attrs={'class':'form-select', 'aria-label':'biofuel', }),
             
@@ -20,7 +20,7 @@ class EvaluatorForm(forms.ModelForm):
                      
             'name': _('Name'),
             'email': _('Email'),
-            'orgonization': _('Orgonization'),
+            'orgonization': _('Organization'),
             'phone': _('Pnone'),
             'biofuel': _('Select Biofuel'),
             

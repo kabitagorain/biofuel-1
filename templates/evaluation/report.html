@@ -9,7 +9,7 @@
 
         @page {
             size: a4 portrait;
-            background-image: url("static/bak.jpg");
+            
             
 
             @frame header_frame { /* Static Frame */
@@ -350,7 +350,7 @@
     <h2 style="font-size: 20px;">Basic Summary</h2>
     <table style="font-size: 14px;">
         <tr>
-            <th>Name And Orgonization</th>
+            <th>Name And Organization</th>
             <th>Email And Phone</th>
             <th>Selected Biofuel</th>
         </tr>
@@ -371,8 +371,12 @@
     <h2 style="font-size: 20px;">{{el.label.name}}</h2>
 
     {% for es in el.evalebelstatement_set.all %}
+    {% if es.statement is not None %}
     <p style="font-size: 14px;">{{es.statement}}</p>
+    {% endif %}
+    {% if es.next_step is not None %}
     <p style="font-size: 14px;">{{es.next_step}}</p>
+    {% endif %}
     {% endfor %}
 
     {% endfor %}
@@ -386,7 +390,17 @@
         <tr>
             <td>
                 <p> <b>Chosen Option :</b> {{e.option.name}}</p>
-                <p> <b>Comment :</b> {{e.get_question_comment}}</p>
+                <p> <b>Comment :</b> 
+
+                    {% for qa in e.get_question_comment  %}
+                   <p>{{qa.comments}}</p> 
+
+                    {% endfor %}
+
+
+                    
+                
+                </p>
                 <p><b>Feedback :</b> {{e.option.statement}}</p>
             </td>
         </tr>

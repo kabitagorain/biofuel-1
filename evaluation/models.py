@@ -34,6 +34,7 @@ class Option(models.Model):
     next_step = models.TextField(null = True, blank = True,)
     overall = models.CharField(max_length=1, default=0)
     positive = models.CharField(max_length=1, default=0)
+    dont_know = models.BooleanField(default=False)
     
     def __str__(self):
         return self.name + '(' + str(self.question.sort_order) + ')'
@@ -41,9 +42,23 @@ class Option(models.Model):
 class LogicalString(models.Model):
     options = models.ManyToManyField(Option)
     text = models.TextField(null = True, blank = True,)
+    overall = models.CharField(max_length=1, default=0)
+    positive = models.CharField(max_length=1, default=0)
     
     def __str__(self):
         return self.text
+    
+class Lslabel(models.Model):
+    name = models.ForeignKey(DifinedLabel, on_delete=models.PROTECT, related_name='ls_dlabels')
+    logical_string = models.ForeignKey(LogicalString, on_delete=models.CASCADE, related_name='logical_strings')
+    value = models.CharField(max_length=1, default=0)
+    
+    def __str__(self):
+        return self.name.name
+    
+    
+    
+    
 class Biofuel(models.Model):
     name = models.CharField(max_length=252)
 
@@ -72,8 +87,8 @@ class Evaluation(models.Model):
     
     @property
     def get_question_comment(self):
-        eva_comment = EvaComments.objects.get(question = self.question, evaluator = self.evaluator)
-        return eva_comment.comments
+        eva_comment = EvaComments.objects.filter(question = self.question, evaluator = self.evaluator)
+        return eva_comment
         
     
 class EvaComments(models.Model):
@@ -101,6 +116,8 @@ class EvaLebelStatement(models.Model):
     statement = models.TextField(blank=True, null=True)
     next_step = models.TextField(blank=True, null=True)
     positive = models.CharField(max_length=1, default=0)
+    dont_know = models.BooleanField(default=False)
+    assesment = models.BooleanField(default=False)
     evaluator = models.CharField(max_length=250, blank=True, null=True)
     create_date = models.DateTimeField(auto_now_add=True, null=True, blank=True)
     
@@ -109,6 +126,10 @@ class EvaLebelStatement(models.Model):
 class OptionSet(models.Model):
     option_list = models.CharField(max_length=252, unique = True)
     text = models.TextField()
+    positive = models.CharField(max_length=1, default=0)
+    overall = models.CharField(max_length=1, default=0)
+    ls_id = models.CharField(max_length=252, default=0)
+    
     
     def __str__(self):
         return str(self.option_list) + str(self.text)

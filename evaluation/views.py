@@ -5,21 +5,17 @@ from .models import *
 from django.contrib import messages
 from django.urls import reverse
 from django_xhtml2pdf.utils import generate_pdf
+from django.db.models import Count
+from . helper import label_assesment_for_donot_know, label_assesment_for_positive, overall_assesment_for_donot_know, overall_assesment_for_positive
 
 
 
-def index(request):    
-    print(request.session.items())
+def index(request):
     
     try:
         session_evaluator = Evaluator.objects.get(email = request.session['evaluator'])
     except:
-        session_evaluator = False
-        
-        
-    
-            
-    
+        session_evaluator = False 
     
     if  (session_evaluator is False) or ('question' not in request.session):         
         if request.method == "POST":         
@@ -48,14 +44,9 @@ def index(request):
                     new_evalabel = EvaLabel(label = dl, evaluator = Evaluator.objects.get(email = email), sort_order=dl.sort_order)
                     new_evalabel.save()
                 request.session['option'] = ''
-                    
-                    
-                    
-                
                 
                 return HttpResponseRedirect('/')
-                
-                
+            
         else:
             form = EvaluatorForm()
             
@@ -103,7 +94,7 @@ def option_add(request):
         request.session['active'] = 'disabled'
                      
             
-        return HttpResponseRedirect('/')   
+        return HttpResponseRedirect('/') 
     
 def Genarator(request, selected_option):
     question = selected_option.question
@@ -112,14 +103,25 @@ def Genarator(request, selected_option):
     for set_label in set_labels: 
         defined_label = DifinedLabel.objects.get(name = set_label.name)     
         eva_label = EvaLabel.objects.get(label = defined_label, evaluator = Evaluator.objects.get(email = request.session['evaluator']))      
-        new_evalebel_statement = EvaLebelStatement(evalebel = eva_label, option_id = selected_option.id, statement = selected_option.statement, next_step = selected_option.next_step, question = selected_option.question, positive = selected_option.positive, evaluator =  request.session['evaluator'])
-        new_evalebel_statement.save()            
+        new_evalebel_statement = EvaLebelStatement(evalebel = eva_label, option_id = selected_option.id, statement = selected_option.statement, next_step = selected_option.next_step, dont_know = selected_option.dont_know, question = selected_option.question, positive = selected_option.positive, evaluator =  request.session['evaluator'])
+        new_evalebel_statement.save() 
+        
+        EvaLebelStatement.objects.filter(evalebel = eva_label, evaluator =  request.session['evaluator'], assesment = True).delete()
+                
+        summery_statement_do_not_know = EvaLebelStatement(evalebel = eva_label, statement = label_assesment_for_donot_know(request, eva_label),  evaluator =  request.session['evaluator'], assesment = True)
+        summery_statement_do_not_know.save()
+        
+        summery_statement_positive = EvaLebelStatement(evalebel = eva_label, statement = label_assesment_for_positive(request, eva_label),  evaluator =  request.session['evaluator'], assesment = True)
+        summery_statement_positive.save()                  
         
     logical_strings = LogicalString.objects.all()
     logical_options = []  
         
-    for logical_string in logical_strings:           
-        text = logical_string.text          
+    for logical_string in logical_strings: 
+        ls_id = logical_string.id           
+        text = logical_string.text 
+        overall = logical_string.overall 
+        positive = logical_string.positive          
         sting_options = logical_string.options.all()
         option_list = []            
         for s_o in sting_options:
@@ -131,7 +133,10 @@ def Genarator(request, selected_option):
             edit if any changed
             '''
             option_set = OptionSet.objects.get(option_list = option_list)
+            option_set.id = ls_id 
             option_set.text = text  
+            option_set.overall = overall 
+            option_set.positive = positive 
             option_set.save()                          
         except Exception as e:                
             '''
@@ -144,7 +149,7 @@ def Genarator(request, selected_option):
                     OptionSet.objects.get(option_list = u).delete()     
             except Exception as e:
                 pass                      
-            new_option_set = OptionSet(option_list = option_list, text = text )
+            new_option_set = OptionSet(option_list = option_list, text = text, overall = overall , positive = positive, ls_id = ls_id )
             new_option_set.save()       
     
     eva_statement = EvaLebelStatement.objects.filter(evaluator = request.session['evaluator'])
@@ -154,21 +159,38 @@ def Genarator(request, selected_option):
     eoi = list(es_option_id) 
     
     defined_common_label = DifinedLabel.objects.get(common_status = True)  
-    eva_label_common = EvaLabel.objects.get(label = defined_common_label, evaluator = Evaluator.objects.get(email = request.session['evaluator']))       
+    eva_label_common = EvaLabel.objects.get(label = defined_common_label, evaluator = Evaluator.objects.get(email = request.session['evaluator'])) 
     
-    if eoi in logical_options:
-        try:
-            common_statement = OptionSet.objects.get(option_list = eoi)            
-            new_evalebel_statement_common = EvaLebelStatement(evalebel = eva_label_common, statement = common_statement.text, evaluator =  request.session['evaluator'])
+    EvaLebelStatement.objects.filter(evalebel = eva_label_common, evaluator =  request.session['evaluator'], assesment = True).delete()
+                    
+    summery_statement_do_not_know = EvaLebelStatement(evalebel = eva_label_common, statement = overall_assesment_for_donot_know(request, eva_label_common),  evaluator =  request.session['evaluator'], assesment = True)
+    summery_statement_do_not_know.save()
+    
+    summery_statement_positive = EvaLebelStatement(evalebel = eva_label_common, statement = overall_assesment_for_positive(request, eva_label_common),  evaluator =  request.session['evaluator'], assesment = True)
+    summery_statement_positive.save() 
+
+    try:
+        logical_statement = OptionSet.objects.get(option_list = eoi)          
+        
+        ls_labels = Lslabel.objects.filter(logical_string =  logical_statement, value = 1)        
+          
+        if (eoi in logical_options) and (logical_statement.overall == str(1)):                      
+            new_evalebel_statement_common = EvaLebelStatement(evalebel = eva_label_common, statement = logical_statement.text, evaluator =  request.session['evaluator'], positive = logical_statement.positive,)
             new_evalebel_statement_common.save()
-        except Exception as e:
+        elif (eoi in logical_options) and (logical_statement.overall == str(0)):  
+            for ls_label in ls_labels: 
+                defined_label = DifinedLabel.objects.get(name = ls_label.name)     
+                ls_eva_label = EvaLabel.objects.get(label = defined_label, evaluator = Evaluator.objects.get(email = request.session['evaluator']))                      
+                new_evalebel_statement_g = EvaLebelStatement(evalebel = ls_eva_label, statement = logical_statement.text, evaluator =  request.session['evaluator'], positive = logical_statement.positive,)
+                new_evalebel_statement_g.save()
+        else:
             pass
+    except Exception as e:        
+        pass
     
     if selected_option.overall == str(1):            
         new_evalebel_statement_common = EvaLebelStatement(evalebel = eva_label_common, statement = selected_option.statement, evaluator =  request.session['evaluator'])
         new_evalebel_statement_common.save()  
-    
-    
   
     
 def option_append(request):    
@@ -218,19 +240,16 @@ def report(request):
     if request.session['evaluator'] == '':
         messages.warning(request, 'Please Fillup The Form To Get Started!')        
         return HttpResponseRedirect('/')
-    
-    
-    
     current_evaluator = Evaluator.objects.get(email = request.session['evaluator'])
     evaluation = Evaluation.objects.filter(evaluator = current_evaluator)
     eva_label = EvaLabel.objects.filter(evaluator = current_evaluator).order_by('sort_order')
-    eva_statment = EvaLebelStatement.objects.filter(evaluator = request.session['evaluator'] )
+    eva_statment = EvaLebelStatement.objects.filter(evaluator = request.session['evaluator'] ).order_by('pk')
+    
     context = {
         'evaluation': evaluation,
         'current_evaluator': current_evaluator,
         'eva_label': eva_label,
-        'eva_statment': eva_statment    
-        
+        'eva_statment': eva_statment       
     }  
     
     resp = HttpResponse(content_type='application/pdf')
